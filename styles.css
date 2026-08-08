@@ -1,0 +1,248 @@
+/* =====================================================================
+   CreditSmart — styles.css
+   -----------------------------------------------------------------------
+   Sistema de diseño compartido por las 3 páginas (index, simulador,
+   solicitar). Se explican las decisiones en comentarios porque en la
+   revisión de código te pueden preguntar "¿por qué hiciste esto así?".
+   ===================================================================== */
+
+/* -----------------------------------------------------------------------
+   1. TOKENS DE DISEÑO (custom properties)
+   Se centralizan color/tipografía/espaciado en variables para no repetir
+   valores "mágicos" por todo el CSS. Si mañana cambia el color de marca,
+   se edita en un solo lugar.
+   ----------------------------------------------------------------------- */
+:root {
+  /* Paleta: azul profundo (confianza financiera) + ámbar (acción/tasa) */
+  --color-navy-900: #0B1D33;
+  --color-navy-700: #142E52;
+  --color-navy-500: #1F4287;
+  --color-amber-500: #E8A33D;
+  --color-amber-600: #CC8A28;
+  --color-bg: #F4F6F9;
+  --color-surface: #FFFFFF;
+  --color-text: #16202B;
+  --color-text-muted: #55627A;
+  --color-border: #DDE3EC;
+  --color-success: #2F8F5B;
+
+  /* Tipografía: Space Grotesk para títulos (geométrica, firme),
+     Inter para texto de lectura, IBM Plex Mono para cifras/tasas
+     (le da un aire "de ticker financiero" a los números). */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Escala de espaciado consistente (base 8px) */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3rem;
+  --space-6: 4.5rem;
+
+  --radius: 14px;
+  --shadow-card: 0 8px 24px rgba(11, 29, 51, 0.08);
+  --shadow-card-hover: 0 14px 32px rgba(11, 29, 51, 0.14);
+}
+
+/* -----------------------------------------------------------------------
+   2. RESET BÁSICO
+   box-sizing: border-box evita que padding/border se sumen al ancho
+   declarado — sin esto, un elemento con width:100% + padding se
+   desborda del contenedor. Es el reset mínimo necesario, no uno
+   genérico copiado completo de internet.
+   ----------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: var(--font-display); margin: 0 0 var(--space-2); line-height: 1.15; }
+h1 { font-size: clamp(2rem, 4vw, 3rem); }
+h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); }
+h3 { font-size: 1.25rem; }
+p { margin: 0 0 var(--space-2); color: var(--color-text-muted); }
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+svg { display: block; }
+
+.container {
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+}
+
+/* Salto de contenido accesible: visible solo al enfocar con teclado */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: auto;
+  background: var(--color-navy-900);
+  color: #fff;
+  padding: var(--space-1) var(--space-2);
+  z-index: 100;
+}
+.skip-link:focus {
+  left: var(--space-2);
+  top: var(--space-2);
+}
+
+/* Foco visible en todo elemento interactivo — requisito de accesibilidad,
+   no decoración: alguien que navega con teclado necesita ver dónde está. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 3px solid var(--color-amber-500);
+  outline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------------
+   3. NAVEGACIÓN
+   nav semántica + <ul> de enlaces. En móvil se colapsa a un menú
+   desplegable controlado por un checkbox invisible (truco "checkbox
+   hack"): permite un menú funcional en móvil sin depender de JS.
+   ----------------------------------------------------------------------- */
+.site-header {
+  background: var(--color-navy-900);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--space-2);
+  position: relative;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+  color: #fff;
+}
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--color-amber-500), var(--color-amber-600));
+  display: grid;
+  place-items: center;
+  color: var(--color-navy-900);
+  font-weight: 800;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+}
+
+.nav-toggle { display: none; }
+.nav-toggle-label {
+  display: none;
+  cursor: pointer;
+  width: 28px;
+  height: 22px;
+  position: relative;
+}
+.nav-toggle-label span,
+.nav-toggle-label span::before,
+.nav-toggle-label span::after {
+  content: '';
+  position: absolute;
+  height: 2px;
+  width: 100%;
+  background: #fff;
+  left: 0;
+}
+.nav-toggle-label span { top: 10px; }
+.nav-toggle-label span::before { top: -8px; }
+.nav-toggle-label span::after { top: 8px; }
+
+.nav-links {
+  display: flex;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav-links a {
+  text-decoration: none;
+  color: #C9D4E5;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding-block: var(--space-1);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.nav-links a:hover,
+.nav-links a[aria-current="page"] {
+  color: #fff;
+  border-color: var(--color-amber-500);
+}
+
+/* -----------------------------------------------------------------------
+   4. HERO
+   ----------------------------------------------------------------------- */
+.hero {
+  background: linear-gradient(180deg, var(--color-navy-900) 0%, var(--color-navy-700) 100%);
+  color: #fff;
+  padding-block: var(--space-6) var(--space-5);
+}
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: var(--space-4);
+  align-items: center;
+}
+.hero p { color: #C9D4E5; max-width: 46ch; }
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-amber-500);
+  background: rgba(232, 163, 61, 0.12);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 999px;
+  margin-bottom: var(--space-2);
+}
+
+/* Panel de "tasa destacada" en el hero — el signature element: una cifra
+   grande en fuente mono, como un ticker, para anclar visualmente el
+   tema financiero desde el primer segundo. */
+.hero-figure {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  text-align: center;
+}
+.hero-figure .rate {
+  font-family: var(--font-mono);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--color-amber-500);
+}
+.hero-figure .rate-label {
+  color: #C9D4E5;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
