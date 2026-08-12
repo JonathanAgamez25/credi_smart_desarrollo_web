@@ -431,3 +431,64 @@ legend {
   margin-top: var(--space-3);
 }
 
+/* -----------------------------------------------------------------------
+   9. FOOTER
+   ----------------------------------------------------------------------- */
+.site-footer {
+  background: var(--color-navy-900);
+  color: #C9D4E5;
+  padding-block: var(--space-4);
+  margin-top: var(--space-6);
+  font-size: 0.85rem;
+}
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* -----------------------------------------------------------------------
+   10. RESPONSIVE
+   Mobile-first al revés (base = desktop) para no repetir el grid en cada
+   breakpoint; solo se sobreescribe lo que cambia de verdad en pantallas
+   chicas: nav colapsada, hero en una columna, filtros apilados.
+   ----------------------------------------------------------------------- */
+
+/* Tablet: ≤900px */
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; }
+  .hero-figure { justify-self: start; }
+  .filter-bar { grid-template-columns: 1fr 1fr; }
+  .filter-bar .btn { grid-column: 1 / -1; }
+}
+
+/* Móvil: ≤640px */
+@media (max-width: 640px) {
+  .nav-toggle-label { display: block; }
+
+  .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--color-navy-700);
+    flex-direction: column;
+    gap: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  .nav-links a { padding: var(--space-2) var(--space-3); display: block; border-bottom: 1px solid rgba(255,255,255,0.08); }
+
+  /* :checked viene del checkbox oculto (#nav-toggle) — así se abre/cierra
+     el menú sin una sola línea de JavaScript. Nota: .nav-links vive DENTRO
+     de <nav>, no es hermano directo del checkbox, así que el combinador ~
+     tiene que apuntar a "nav .nav-links", no a ".nav-links" solo. */
+  #nav-toggle:checked ~ nav .nav-links { max-height: 320px; }
+
+  .filter-bar { grid-template-columns: 1fr; }
+  .card-actions { flex-direction: column; }
+  .form-actions { flex-direction: column; }
+  .footer-inner { flex-direction: column; text-align: center; }
+}
