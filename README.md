@@ -75,12 +75,6 @@ npm run dev
 npm run build
 ```
 
-## Capturas de pantalla
-
-_Pendiente: agregar capturas de las 3 páginas (Inicio, Simulador, Solicitar)
-en escritorio y móvil, igual que en la Actividad 1, dentro de una carpeta
-`screenshots/` y enlazarlas aquí._
-
 ## Nota sobre el uso de asistencia de IA
 
 Se usó asistencia de IA (Claude) para generar la estructura inicial de los
