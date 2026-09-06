@@ -1,0 +1,436 @@
+/* index.css - mismo sistema de diseno de la Actividad 1 (HTML/CSS estatico),
+   adaptado para la version en React. Paleta, tipografias y decisiones de
+   accesibilidad documentadas en el README original se mantienen intactas. */
+
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@600;700&display=swap");
+
+:root {
+  --navy: #0b1d33;
+  --navy-light: #16304f;
+  --amber: #e8a33d;
+  --amber-dark: #c8862a;
+  --text: #1c2530;
+  --text-muted: #5a6472;
+  --border: #e2e6ea;
+  --bg: #f7f8fa;
+  --white: #ffffff;
+  --success: #1c7c4c;
+  --error: #c0392b;
+
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --space-5: 4rem;
+
+  --radius: 0.75rem;
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  margin: 0 0 var(--space-2);
+}
+
+p {
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.container {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding-inline: var(--space-2);
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--amber);
+  color: var(--navy);
+  padding: var(--space-1) var(--space-2);
+  z-index: 100;
+}
+.skip-link:focus {
+  left: var(--space-2);
+}
+
+/* Header / Nav */
+.site-header {
+  background: var(--navy);
+  color: var(--white);
+}
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--space-2);
+  position: relative;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--white);
+  text-decoration: none;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.brand-mark {
+  background: var(--amber);
+  color: var(--navy);
+  font-weight: 700;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  display: grid;
+  place-items: center;
+}
+.nav-toggle-label {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+.nav-toggle-label span,
+.nav-toggle-label span::before,
+.nav-toggle-label span::after {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--white);
+  position: relative;
+}
+.nav-toggle-label span::before {
+  position: absolute;
+  top: -8px;
+}
+.nav-toggle-label span::after {
+  position: absolute;
+  top: 8px;
+}
+.nav-links {
+  display: flex;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav-links a {
+  color: var(--white);
+  text-decoration: none;
+  font-weight: 500;
+  opacity: 0.85;
+}
+.nav-links a.active,
+.nav-links a[aria-current="page"] {
+  opacity: 1;
+  border-bottom: 2px solid var(--amber);
+}
+
+@media (max-width: 720px) {
+  .nav-toggle-label {
+    display: block;
+  }
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--navy-light);
+    padding: var(--space-2);
+  }
+  .nav-links-open {
+    display: flex;
+  }
+}
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  color: var(--white);
+  padding-block: var(--space-5);
+}
+.hero-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-4);
+  align-items: center;
+}
+.eyebrow {
+  color: var(--amber);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+.hero h1 {
+  color: var(--white);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+}
+.hero p {
+  color: #cdd6e0;
+}
+.hero-figure {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  text-align: center;
+}
+.rate {
+  font-family: var(--font-mono);
+  font-size: 2.5rem;
+  color: var(--amber);
+  font-weight: 700;
+}
+.rate-label {
+  color: #cdd6e0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 0.65rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 2px solid transparent;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+.btn-primary {
+  background: var(--amber);
+  color: var(--navy);
+}
+.btn-primary:hover {
+  background: var(--amber-dark);
+}
+.btn-outline {
+  background: transparent;
+  border-color: currentColor;
+  color: inherit;
+}
+.btn-block {
+  width: 100%;
+  text-align: center;
+}
+
+/* Sections */
+.section {
+  padding-block: var(--space-4);
+}
+.section-heading {
+  margin-bottom: var(--space-3);
+}
+
+/* Credit cards */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+.credit-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.credit-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+.credit-desc {
+  flex-grow: 1;
+  font-size: 0.92rem;
+}
+.credit-rate {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  color: var(--navy);
+  font-weight: 700;
+}
+.credit-rate span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.credit-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+}
+.credit-meta strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.card-actions .btn {
+  flex: 1;
+  text-align: center;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+}
+
+/* Filter bar (Simulador) */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: end;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1 1 200px;
+}
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.field input,
+.field select,
+.field textarea {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+.field-error {
+  color: var(--error);
+  font-size: 0.8rem;
+}
+.results-count {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-2);
+}
+.no-results {
+  text-align: center;
+  padding: var(--space-4);
+  color: var(--text-muted);
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+}
+
+/* Form (Solicitar) */
+.form-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 780px;
+  margin-inline: auto;
+}
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+legend {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  padding-inline: 0.5rem;
+  color: var(--navy);
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-2);
+}
+.field-wide {
+  grid-column: 1 / -1;
+}
+.form-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.summary-box {
+  margin-top: var(--space-2);
+  background: #fff8ec;
+  border: 1px solid var(--amber);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+}
+.summary-box h4 {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-heading);
+}
+.summary-cuota {
+  font-family: var(--font-mono);
+  color: var(--navy);
+}
+.success-message {
+  background: #e9f7ef;
+  color: var(--success);
+  border: 1px solid var(--success);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Footer */
+.site-footer {
+  background: var(--navy);
+  color: #cdd6e0;
+  margin-top: var(--space-5);
+}
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-block: var(--space-2);
+  font-size: 0.85rem;
+}
