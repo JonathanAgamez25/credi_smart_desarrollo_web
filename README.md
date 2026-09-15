@@ -5,6 +5,15 @@
 **Curso:** Ingeniería Web I — S30-EA2
 **Institución:** Institución Universitaria Digital de Antioquia (IU Digital)
 
+## Video de sustentación
+
+[Ver video de sustentación](https://drive.google.com/file/d/1tbQgym1Sdfr3fIYNAvQDD24x6otm1YdS/view?usp=sharing)
+
+En el video se explican y demuestran en vivo: manejo de estado con `useState`,
+búsqueda y filtros dinámicos, formulario controlado con validaciones, cálculo
+automático de la cuota mensual, y el uso de `.map()`, `.filter()`, `.sort()` y
+`.find()` en el manejo de arrays.
+
 ## Descripción del proyecto
 
 Evolución de la Actividad 1 (CreditSmart estático en HTML/CSS) a una aplicación
