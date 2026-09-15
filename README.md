@@ -74,6 +74,16 @@ npm run dev
 # 4. (Opcional) generar build de producción
 npm run build
 ```
+## Capturas de pantalla
+
+### Inicio — catálogo de créditos
+![Inicio](screenshots/01-inicio.png)
+
+### Simulador — búsqueda y filtros en tiempo real
+![Simulador](screenshots/02-simulador.png)
+
+### Solicitar crédito — formulario controlado
+![Solicitar](screenshots/03-solicitar.png)
 
 ## Nota sobre el uso de asistencia de IA
 
