@@ -36,25 +36,25 @@ la nube. Ahora el catálogo de créditos y las solicitudes **viven en Firestore*
 
 ## Estructura del proyecto
 
+```
 src/
 ├── components/
-│ ├── CreditCard.jsx # tarjeta de crédito reutilizable
-│ └── Navbar.jsx # barra de navegación
+│   ├── CreditCard.jsx        # tarjeta de crédito reutilizable
+│   └── Navbar.jsx            # barra de navegación
 ├── data/
-│ └── creditsData.js # (legacy - ya no se usa, migrado a Firestore)
+│   └── creditsData.js        # (legacy - ya no se usa, migrado a Firestore)
 ├── pages/
-│ ├── Home.jsx # catálogo (READ desde Firestore)
-│ ├── Simulador.jsx # filtros sobre datos de Firestore
-│ ├── Solicitar.jsx # formulario (CREATE en Firestore)
-│ └── MisSolicitudes.jsx # queries por email (READ filtrado)
+│   ├── Home.jsx              # catálogo (READ desde Firestore)
+│   ├── Simulador.jsx         # filtros sobre datos de Firestore
+│   ├── Solicitar.jsx         # formulario (CREATE en Firestore)
+│   └── MisSolicitudes.jsx    # queries por email (READ filtrado)
 ├── utils/
-│ └── finance.js # formatCOP() y calcularCuotaMensual()
-├── firebase.js # inicializa Firebase + exporta db
-├── App.jsx # rutas (React Router)
-├── main.jsx # entry point
-└── index.css # estilos globales
-
-text
+│   └── finance.js            # formatCOP() y calcularCuotaMensual()
+├── firebase.js               # inicializa Firebase + exporta db
+├── App.jsx                   # rutas (React Router)
+├── main.jsx                  # entry point
+└── index.css                 # estilos globales
+```
 
 ## Estructura de Firestore
 
@@ -72,7 +72,8 @@ Cada documento contiene:
 | `maxTermMonths` | number | `72`                         |
 | `icon`          | string | path SVG                     |
 
-**Reglas:** `allow read: if true; allow write: if false;` (catálogo público, solo admin puede editar desde la consola).
+**Reglas:** `allow read: if true; allow write: if false;` (catálogo público,
+solo admin puede editar desde la consola).
 
 ### Colección `solicitudes`
 
@@ -93,9 +94,9 @@ Cada documento contiene:
 La query `where("email", "==", ...)` + `orderBy("fecha", "desc")` requiere un
 índice compuesto en Firestore:
 
-- Colección: `solicitudes`
-- Campo 1: `email` (Ascendente)
-- Campo 2: `fecha` (Descendente)
+- **Colección:** `solicitudes`
+- **Campo 1:** `email` (Ascendente)
+- **Campo 2:** `fecha` (Descendente)
 
 ## Instrucciones de instalación
 
@@ -118,3 +119,47 @@ npm run dev
 # 5. (Opcional) build de producción
 npm run build
 ```
+
+## Variables de entorno
+
+El archivo `.env` (**NO versionado**) contiene:
+
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+El archivo `.env.example` (**SÍ versionado**) muestra la estructura sin
+valores reales.
+
+## Funcionalidades
+
+- 📖 **Catálogo de créditos** cargado desde Firestore (READ).
+- 🎛️ **Simulador** con filtros por nombre, rango de monto y ordenamiento por tasa.
+- 📝 **Formulario de solicitud** con validaciones, cálculo de cuota y guardado
+  en Firestore (CREATE).
+- 🔍 **Mis Solicitudes** con filtro por email y ordenamiento por fecha (QUERY).
+- 🛡️ **Seguridad:** credenciales en `.env` + reglas de Firestore.
+
+## Capturas de pantalla
+
+_Pendiente: agregar capturas de las 4 páginas (Inicio, Simulador, Solicitar,
+Mis Solicitudes) en escritorio y móvil, dentro de una carpeta `screenshots/`._
+
+## Video demostrativo
+
+_Pendiente: link al video._
+
+## Nota sobre el uso de asistencia de IA
+
+Se usó asistencia de IA (Claude) para guiar la integración con Firebase
+Firestore (setup del SDK, operaciones CRUD, queries compuestas, manejo de
+errores y variables de entorno), declarado aquí conforme a la política del
+curso. El código fue revisado y puede explicarse en detalle en la
+sustentación: las operaciones `getDocs` / `addDoc`, la query con `where` +
+`orderBy`, el manejo de `loading`/`error` states, y la protección de
+credenciales están comentados directamente en cada archivo fuente.
