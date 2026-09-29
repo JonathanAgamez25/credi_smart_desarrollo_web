@@ -145,14 +145,6 @@ valores reales.
 - 🔍 **Mis Solicitudes** con filtro por email y ordenamiento por fecha (QUERY).
 - 🛡️ **Seguridad:** credenciales en `.env` + reglas de Firestore.
 
-## Capturas de pantalla
-
-_Pendiente: agregar capturas de las 4 páginas (Inicio, Simulador, Solicitar,
-Mis Solicitudes) en escritorio y móvil, dentro de una carpeta `screenshots/`._
-
-## Video demostrativo
-
-_Pendiente: link al video._
 
 ## Nota sobre el uso de asistencia de IA
 
