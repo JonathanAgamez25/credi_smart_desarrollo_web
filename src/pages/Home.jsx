@@ -1,15 +1,41 @@
-// Home.jsx (Inicio)
-// -----------------------------------------------------------------------------
-// Antes, index.html tenía 5 <article class="credit-card"> escritos a mano.
-// Ahora, "creditsData" trae los 5 créditos como datos, y .map() los convierte
-// en 5 componentes <CreditCard>. Si se agrega un 6to crédito en creditsData.js,
-// aparece aquí automáticamente sin tocar este archivo.
-
+// src/pages/Home.jsx
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 import CreditCard from "../components/CreditCard";
-import creditsData from "../data/creditsData";
 
 function Home() {
+  const [credits, setCredits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchCredits() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const snapshot = await getDocs(collection(db, "creditos"));
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setCredits(data);
+      } catch (err) {
+        console.error("Error al cargar créditos:", err);
+        setError(
+          "No pudimos cargar el catálogo. Verifica tu conexión e intenta de nuevo.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCredits();
+  }, []);
+
   return (
     <>
       <section className="hero">
@@ -18,7 +44,7 @@ function Home() {
             <span className="eyebrow">FinTech Solutions S.A.S.</span>
             <h1>Encuentra el crédito que se ajusta a tu plan, no al revés</h1>
             <p>
-              Compara tasas, montos y plazos de nuestros {creditsData.length}{" "}
+              Compara tasas, montos y plazos de nuestros {credits.length}{" "}
               productos crediticios y solicita en línea en minutos.
             </p>
             <Link to="/simulador" className="btn btn-primary">
@@ -39,14 +65,25 @@ function Home() {
             <p>Estos son los productos disponibles hoy.</p>
           </div>
 
-          <div className="card-grid">
-            {/* key={credit.id} es obligatorio: le dice a React cuál tarjeta es
-                cuál, para que no tenga que redibujar las 5 cada vez que algo
-                cambia. Usamos el id (string único), nunca el índice del array. */}
-            {creditsData.map((credit) => (
-              <CreditCard key={credit.id} {...credit} />
-            ))}
-          </div>
+          {loading && <p className="loading-state">Cargando créditos...</p>}
+
+          {error && (
+            <div className="error-state" role="alert">
+              <p>{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && credits.length === 0 && (
+            <p className="empty-state">Todavía no hay créditos disponibles.</p>
+          )}
+
+          {!loading && !error && credits.length > 0 && (
+            <div className="card-grid">
+              {credits.map((credit) => (
+                <CreditCard key={credit.id} {...credit} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>

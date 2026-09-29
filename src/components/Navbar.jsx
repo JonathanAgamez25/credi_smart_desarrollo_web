@@ -1,15 +1,4 @@
 // Navbar.jsx
-// -----------------------------------------------------------------------------
-// En la Actividad 1 el menú móvil se abría/cerraba con el "truco del checkbox
-// oculto" (solo CSS, sin JavaScript), documentado a propósito porque esa
-// actividad pedía "sin JS". Ahora que SÍ estamos usando React, lo natural es
-// controlar ese mismo comportamiento con un hook useState: el estado "open"
-// dice si el menú está abierto, y el botón lo cambia con setOpen().
-//
-// NavLink (en vez de Link normal) le agrega automáticamente la clase/atributo
-// activo a la página en la que estás — reemplaza el aria-current="page" que
-// antes había que escribir a mano en cada archivo .html.
-
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
@@ -29,7 +18,9 @@ function Navbar() {
         <button
           type="button"
           className="nav-toggle-label"
-          aria-label={open ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
+          aria-label={
+            open ? "Cerrar menú de navegación" : "Abrir menú de navegación"
+          }
           aria-expanded={open}
           onClick={() => setOpen((prev) => !prev)}
         >
@@ -51,6 +42,11 @@ function Navbar() {
             <li>
               <NavLink to="/solicitar" onClick={() => setOpen(false)}>
                 Solicitar crédito
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/mis-solicitudes" onClick={() => setOpen(false)}>
+                Mis solicitudes
               </NavLink>
             </li>
           </ul>

@@ -1,70 +1,101 @@
-# CreditSmart — Aplicación Web Dinámica con React
+# CreditSmart — Integración con Firebase Firestore
 
 **Estudiante:** Jonatan Dair Ávila Agamez
 **GitHub:** [@JonathanAgamez25](https://github.com/JonathanAgamez25)
-**Curso:** Ingeniería Web I — S30-EA2
+**Curso:** Ingeniería Web I — S40-EA3
 **Institución:** Institución Universitaria Digital de Antioquia (IU Digital)
-
-## Video de sustentación
-
-[Ver video de sustentación](https://drive.google.com/file/d/1tbQgym1Sdfr3fIYNAvQDD24x6otm1YdS/view?usp=sharing)
-
-En el video se explican y demuestran en vivo: manejo de estado con `useState`,
-búsqueda y filtros dinámicos, formulario controlado con validaciones, cálculo
-automático de la cuota mensual, y el uso de `.map()`, `.filter()`, `.sort()` y
-`.find()` en el manejo de arrays.
 
 ## Descripción del proyecto
 
-Evolución de la Actividad 1 (CreditSmart estático en HTML/CSS) a una aplicación
-web dinámica con React. Los datos de los créditos ahora viven en un array de
-objetos (`src/data/creditsData.js`), los componentes son reutilizables
-(`CreditCard`, `Navbar`), y las tres páginas originales (Inicio, Simulador,
-Solicitar) se manejan con React Router en vez de ser tres archivos `.html`
-independientes.
+Evolución de las actividades anteriores (CreditSmart estático en HTML/CSS →
+aplicación React dinámica) a una aplicación web **full-stack** con backend en
+la nube. Ahora el catálogo de créditos y las solicitudes **viven en Firestore**
+(NoSQL), no en archivos locales.
 
-### Funcionalidades nuevas respecto a la Actividad 1
+### Funcionalidades nuevas respecto al Taller 2
 
-- **Inicio:** el catálogo de créditos se genera con `.map()` sobre
-  `creditsData`, usando el componente `CreditCard` con props.
-- **Simulador:** búsqueda por nombre en tiempo real, filtro por rango de
-  monto, y opción de ordenar por tasa de interés (menor a mayor), todo con
-  `useState` + `.filter()` + `.sort()`. Muestra "No hay créditos disponibles"
-  cuando el resultado es vacío.
-- **Solicitar:** formulario 100% controlado con `useState`, validaciones en
-  tiempo real (cédula, correo, teléfono, monto y plazo según el crédito
-  elegido), cálculo automático de la cuota mensual estimada (sistema de cuota
-  fija / amortización francesa) que se recalcula cada vez que cambian el
-  monto o el plazo, resumen antes de enviar, mensaje de éxito, y limpieza
-  automática del formulario. Las solicitudes se guardan en un array en
-  memoria (`useState`), no se envían a ningún servidor.
+- **Firestore (NoSQL):** dos colecciones — `creditos` y `solicitudes`.
+- **READ:** el catálogo de créditos se carga desde Firestore con `getDocs()`,
+  con `loading state`, manejo de errores y mapeo de IDs de documento.
+- **CREATE:** el formulario de solicitud guarda cada envío en Firestore con
+  `addDoc()`, con validaciones, `serverTimestamp()` y limpieza del formulario
+  tras el éxito.
+- **QUERIES:** nueva página **"Mis Solicitudes"** que consulta Firestore con
+  `where("email", "==", ...)` + `orderBy("fecha", "desc")`, incluyendo índice
+  compuesto.
+- **Seguridad:** las credenciales se manejan con variables de entorno
+  (`import.meta.env.VITE_*`), y el archivo `.env` está en `.gitignore`.
 
 ## Tecnologías utilizadas
 
 - React 19 + Vite
-- React Router DOM (enrutamiento entre Inicio / Simulador / Solicitar)
-- CSS3 (mismo sistema de diseño de la Actividad 1: paleta navy/ámbar,
+- React Router DOM
+- **Firebase 11** (Firestore)
+- CSS3 (mismo sistema de diseño de actividades anteriores: navy/ámbar,
   tipografías Space Grotesk + Inter + IBM Plex Mono, grid responsive)
 
 ## Estructura del proyecto
 
-```
 src/
 ├── components/
-│   ├── CreditCard.jsx   # tarjeta de crédito reutilizable (recibe props)
-│   └── Navbar.jsx       # barra de navegación con menú móvil (useState)
+│ ├── CreditCard.jsx # tarjeta de crédito reutilizable
+│ └── Navbar.jsx # barra de navegación
 ├── data/
-│   └── creditsData.js   # los 5 productos de crédito como array de objetos
+│ └── creditsData.js # (legacy - ya no se usa, migrado a Firestore)
 ├── pages/
-│   ├── Home.jsx         # catálogo de créditos (Inicio)
-│   ├── Simulador.jsx    # búsqueda y filtros dinámicos
-│   └── Solicitar.jsx    # formulario controlado + cálculo de cuota
+│ ├── Home.jsx # catálogo (READ desde Firestore)
+│ ├── Simulador.jsx # filtros sobre datos de Firestore
+│ ├── Solicitar.jsx # formulario (CREATE en Firestore)
+│ └── MisSolicitudes.jsx # queries por email (READ filtrado)
 ├── utils/
-│   └── finance.js       # formatCOP() y calcularCuotaMensual()
-├── App.jsx              # configuración de rutas (React Router)
-├── main.jsx             # punto de entrada
-└── index.css            # estilos globales
-```
+│ └── finance.js # formatCOP() y calcularCuotaMensual()
+├── firebase.js # inicializa Firebase + exporta db
+├── App.jsx # rutas (React Router)
+├── main.jsx # entry point
+└── index.css # estilos globales
+
+text
+
+## Estructura de Firestore
+
+### Colección `creditos`
+
+Cada documento contiene:
+
+| Campo           | Tipo   | Ejemplo                      |
+| --------------- | ------ | ---------------------------- |
+| `name`          | string | `"Crédito Vehículo"`         |
+| `description`   | string | `"Financia hasta el 90%..."` |
+| `rate`          | number | `0.102` (10.2% E.A.)         |
+| `minAmount`     | number | `5000000`                    |
+| `maxAmount`     | number | `120000000`                  |
+| `maxTermMonths` | number | `72`                         |
+| `icon`          | string | path SVG                     |
+
+**Reglas:** `allow read: if true; allow write: if false;` (catálogo público, solo admin puede editar desde la consola).
+
+### Colección `solicitudes`
+
+Cada documento contiene:
+
+| Campo                                         | Tipo                        |
+| --------------------------------------------- | --------------------------- |
+| `nombre`, `cedula`, `email`, `telefono`       | string                      |
+| `tipoCredito`, `nombreCredito`                | string                      |
+| `monto`, `plazo`, `ingresos`, `cuotaEstimada` | number                      |
+| `destino`, `empresa`, `cargo`                 | string                      |
+| `fecha`                                       | timestamp (serverTimestamp) |
+
+**Reglas:** `allow read: if true; allow create: if true; allow update, delete: if false;`
+
+### Índice compuesto
+
+La query `where("email", "==", ...)` + `orderBy("fecha", "desc")` requiere un
+índice compuesto en Firestore:
+
+- Colección: `solicitudes`
+- Campo 1: `email` (Ascendente)
+- Campo 2: `fecha` (Descendente)
 
 ## Instrucciones de instalación
 
@@ -76,33 +107,14 @@ cd credi_smart_desarrollo_web
 # 2. Instalar dependencias
 npm install
 
-# 3. Correr en modo desarrollo
+# 3. Configurar variables de entorno
+cp .env.example .env
+# Editar .env y llenar con las credenciales de tu proyecto Firebase.
+
+# 4. Correr en modo desarrollo
 npm run dev
 # abre http://localhost:5173
 
-# 4. (Opcional) generar build de producción
+# 5. (Opcional) build de producción
 npm run build
 ```
-## Capturas de pantalla
-
-### Inicio — catálogo de créditos
-![Inicio](screenshots/01-inicio.png)
-
-### Simulador — búsqueda y filtros en tiempo real
-![Simulador](screenshots/02-simulador.png)
-
-### Solicitar crédito — formulario controlado
-![Solicitar](screenshots/03-solicitar.png)
-
-## Nota sobre el uso de asistencia de IA
-
-Se usó asistencia de IA (Claude) para generar la estructura inicial de los
-componentes de React de este proyecto, declarado aquí conforme a la política
-del curso. El código fue revisado y puede explicarse en detalle en la
-sustentación: la fórmula de cálculo de cuota (amortización francesa), la
-lógica de filtros con `.filter()`/`.sort()`, y el manejo de estado en el
-formulario controlado están comentados directamente en cada archivo fuente.
-
-## Trazabilidad entre talleres
-
-La entrega original del primer taller se conserva en `legacy/`. La rama actual representa la evolución del proyecto hacia React, manteniendo la historia previa de GitHub y agregando la nueva implementación mediante commits posteriores.

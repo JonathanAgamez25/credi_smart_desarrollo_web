@@ -1,5 +1,12 @@
-import { useState } from "react";
-import creditsData from "../data/creditsData";
+// src/pages/Solicitar.jsx
+import { useEffect, useState } from "react";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  serverTimestamp,
+} from "firebase/firestore";
+import { db } from "../firebase";
 import { calcularCuotaMensual, formatCOP } from "../utils/finance";
 
 const valoresIniciales = {
@@ -16,106 +23,145 @@ const valoresIniciales = {
   ingresos: "",
 };
 
-function validar(formData) {
+function validar(formData, creditos) {
   const errors = {};
+
   if (!formData.nombre.trim()) errors.nombre = "El nombre es obligatorio.";
-  if (!/^\d{6,10}$/.test(formData.cedula)) {
+  if (!/^\d{6,10}$/.test(formData.cedula))
     errors.cedula = "La cédula debe tener entre 6 y 10 dígitos.";
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
     errors.email = "Ingresa un correo electrónico válido.";
-  }
-  if (!/^\d{7,10}$/.test(formData.telefono)) {
+  if (!/^\d{7,10}$/.test(formData.telefono))
     errors.telefono = "El teléfono debe tener entre 7 y 10 dígitos.";
-  }
-  if (!formData.tipoCredito) errors.tipoCredito = "Selecciona un tipo de crédito.";
+  if (!formData.tipoCredito)
+    errors.tipoCredito = "Selecciona un tipo de crédito.";
 
-  const creditoSeleccionado = creditsData.find(
-    (credito) => credito.id === formData.tipoCredito
+  const creditoSeleccionado = creditos.find(
+    (c) => c.id === formData.tipoCredito,
   );
-  const monto = Number(formData.monto);
-  const plazo = Number(formData.plazo);
-  const ingresos = Number(formData.ingresos);
 
-  if (!formData.monto || !Number.isFinite(monto) || monto <= 0) {
-    errors.monto = "Ingresa un monto mayor que cero.";
-  } else if (creditoSeleccionado && (monto < creditoSeleccionado.minAmount || monto > creditoSeleccionado.maxAmount)) {
-    errors.monto = `El monto debe estar entre ${formatCOP(creditoSeleccionado.minAmount)} y ${formatCOP(creditoSeleccionado.maxAmount)}.`;
+  if (!formData.monto) {
+    errors.monto = "El monto es obligatorio.";
+  } else if (creditoSeleccionado) {
+    const monto = Number(formData.monto);
+    if (
+      monto < creditoSeleccionado.minAmount ||
+      monto > creditoSeleccionado.maxAmount
+    ) {
+      errors.monto = `El monto debe estar entre ${formatCOP(
+        creditoSeleccionado.minAmount,
+      )} y ${formatCOP(creditoSeleccionado.maxAmount)} para este crédito.`;
+    }
   }
-  if (!formData.plazo || !Number.isFinite(plazo) || plazo <= 0) {
-    errors.plazo = "Selecciona un plazo válido.";
-  } else if (creditoSeleccionado && plazo > creditoSeleccionado.maxTermMonths) {
-    errors.plazo = `El plazo máximo para este crédito es de ${creditoSeleccionado.maxTermMonths} meses.`;
+
+  if (!formData.plazo) {
+    errors.plazo = "Selecciona un plazo.";
+  } else if (
+    creditoSeleccionado &&
+    Number(formData.plazo) > creditoSeleccionado.maxTermMonths
+  ) {
+    errors.plazo = `El plazo máximo para este crédito es ${creditoSeleccionado.maxTermMonths} meses.`;
   }
-  if (!formData.ingresos || !Number.isFinite(ingresos) || ingresos <= 0) {
-    errors.ingresos = "Ingresa tus ingresos mensuales.";
-  }
+
   return errors;
 }
 
 function Solicitar() {
+  // ---- Estado del formulario ----
   const [formData, setFormData] = useState(valoresIniciales);
   const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [solicitudesEnviadas, setSolicitudesEnviadas] = useState([]);
   const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState(null);
 
-  const creditoSeleccionado = creditsData.find(
-    (credito) => credito.id === formData.tipoCredito
+  // ---- Estado de los créditos cargados desde Firestore ----
+  const [creditos, setCreditos] = useState([]);
+  const [loadingCreditos, setLoadingCreditos] = useState(true);
+
+  // Cargar catálogo de créditos una sola vez al montar
+  useEffect(() => {
+    async function cargarCreditos() {
+      try {
+        const snapshot = await getDocs(collection(db, "creditos"));
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCreditos(data);
+      } catch (err) {
+        console.error("Error al cargar créditos:", err);
+      } finally {
+        setLoadingCreditos(false);
+      }
+    }
+    cargarCreditos();
+  }, []);
+
+  const creditoSeleccionado = creditos.find(
+    (c) => c.id === formData.tipoCredito,
   );
+
   const cuotaEstimada = creditoSeleccionado
     ? calcularCuotaMensual(
         Number(formData.monto) || 0,
         creditoSeleccionado.rate,
-        Number(formData.plazo) || 0
+        Number(formData.plazo) || 0,
       )
     : 0;
 
-  function handleChange(event) {
-    const { name, value } = event.target;
-    const siguienteFormData = { ...formData, [name]: value };
-    const siguientesErrores = validar(siguienteFormData);
-    setFormData(siguienteFormData);
-    setErrors(siguientesErrores);
+  function handleChange(e) {
+    const { name, value } = e.target;
+    const nuevoFormData = { ...formData, [name]: value };
+    setFormData(nuevoFormData);
+    setErrors((prev) => ({ ...prev, ...validar(nuevoFormData, creditos) }));
     setEnviado(false);
+    setErrorEnvio(null);
   }
 
-  function handleBlur(event) {
-    const { name } = event.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-  }
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-  function mostrarError(nombreCampo) {
-    return touched[nombreCampo] ? errors[nombreCampo] : "";
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    const erroresActuales = validar(formData);
+    // 1. Validar
+    const erroresActuales = validar(formData, creditos);
     setErrors(erroresActuales);
-    setTouched(
-      Object.keys(valoresIniciales).reduce(
-        (campos, campo) => ({ ...campos, [campo]: true }),
-        {}
-      )
-    );
     if (Object.keys(erroresActuales).length > 0) return;
 
-    setSolicitudesEnviadas((prev) => [
-      ...prev,
-      { ...formData, cuotaEstimada, fecha: new Date().toISOString() },
-    ]);
-    setEnviado(true);
-    setFormData(valoresIniciales);
-    setErrors({});
-    setTouched({});
-  }
+    // 2. Guardar en Firestore
+    try {
+      setEnviando(true);
+      setErrorEnvio(null);
 
-  function limpiarFormulario() {
-    setFormData(valoresIniciales);
-    setErrors({});
-    setTouched({});
-    setEnviado(false);
+      const nuevaSolicitud = {
+        nombre: formData.nombre.trim(),
+        cedula: formData.cedula,
+        email: formData.email.trim().toLowerCase(),
+        telefono: formData.telefono,
+        tipoCredito: formData.tipoCredito,
+        nombreCredito: creditoSeleccionado?.name || "",
+        monto: Number(formData.monto),
+        plazo: Number(formData.plazo),
+        destino: formData.destino.trim(),
+        empresa: formData.empresa.trim(),
+        cargo: formData.cargo.trim(),
+        ingresos: Number(formData.ingresos) || 0,
+        cuotaEstimada: Number(cuotaEstimada),
+        fecha: serverTimestamp(),
+      };
+
+      await addDoc(collection(db, "solicitudes"), nuevaSolicitud);
+
+      // 3. Éxito: limpiar y avisar
+      setEnviado(true);
+      setFormData(valoresIniciales);
+      setErrors({});
+    } catch (err) {
+      console.error("Error al guardar solicitud:", err);
+      setErrorEnvio(
+        "No pudimos enviar tu solicitud. Verifica tu conexión e intenta de nuevo.",
+      );
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -124,13 +170,20 @@ function Solicitar() {
         <div className="section-heading" style={{ textAlign: "center" }}>
           <h1>Solicitar crédito</h1>
           <p style={{ marginInline: "auto" }}>
-            Completa los datos y observa cómo se actualiza la cuota mensual en tiempo real.
+            Completa los siguientes datos. Tu solicitud se guardará de forma
+            segura.
           </p>
         </div>
 
         {enviado && (
           <p className="success-message" role="status">
-            Solicitud enviada correctamente. Se guardó en esta sesión.
+            ✅ ¡Solicitud enviada correctamente! Hemos recibido tu información.
+          </p>
+        )}
+
+        {errorEnvio && (
+          <p className="error-state" role="alert">
+            ❌ {errorEnvio}
           </p>
         )}
 
@@ -138,10 +191,66 @@ function Solicitar() {
           <fieldset>
             <legend>Datos personales</legend>
             <div className="form-grid">
-              <CampoTexto label="Nombre completo" name="nombre" value={formData.nombre} onChange={handleChange} onBlur={handleBlur} error={mostrarError("nombre")} wide />
-              <CampoTexto label="Cédula" name="cedula" value={formData.cedula} onChange={handleChange} onBlur={handleBlur} error={mostrarError("cedula")} inputMode="numeric" />
-              <CampoTexto label="Correo electrónico" name="email" type="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} error={mostrarError("email")} />
-              <CampoTexto label="Teléfono" name="telefono" type="tel" value={formData.telefono} onChange={handleChange} onBlur={handleBlur} error={mostrarError("telefono")} />
+              <div className="field field-wide">
+                <label htmlFor="nombre">Nombre completo</label>
+                <input
+                  type="text"
+                  id="nombre"
+                  name="nombre"
+                  placeholder="Ej: Jonatan Dair Ávila Agamez"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                />
+                {errors.nombre && (
+                  <span className="field-error">{errors.nombre}</span>
+                )}
+              </div>
+
+              <div className="field">
+                <label htmlFor="cedula">Cédula</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  id="cedula"
+                  name="cedula"
+                  placeholder="Ej: 1002345678"
+                  value={formData.cedula}
+                  onChange={handleChange}
+                />
+                {errors.cedula && (
+                  <span className="field-error">{errors.cedula}</span>
+                )}
+              </div>
+
+              <div className="field">
+                <label htmlFor="email">Correo electrónico</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="nombre@correo.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+                {errors.email && (
+                  <span className="field-error">{errors.email}</span>
+                )}
+              </div>
+
+              <div className="field">
+                <label htmlFor="telefono">Teléfono</label>
+                <input
+                  type="tel"
+                  id="telefono"
+                  name="telefono"
+                  placeholder="Ej: 3001234567"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                />
+                {errors.telefono && (
+                  <span className="field-error">{errors.telefono}</span>
+                )}
+              </div>
             </div>
           </fieldset>
 
@@ -150,36 +259,87 @@ function Solicitar() {
             <div className="form-grid">
               <div className="field">
                 <label htmlFor="tipo-credito">Tipo de crédito</label>
-                <select id="tipo-credito" name="tipoCredito" value={formData.tipoCredito} onChange={handleChange} onBlur={handleBlur} aria-invalid={Boolean(mostrarError("tipoCredito"))}>
-                  <option value="">Selecciona un producto</option>
-                  {creditsData.map((credito) => (
-                    <option key={credito.id} value={credito.id}>{credito.name}</option>
+                <select
+                  id="tipo-credito"
+                  name="tipoCredito"
+                  value={formData.tipoCredito}
+                  onChange={handleChange}
+                  disabled={loadingCreditos}
+                >
+                  <option value="">
+                    {loadingCreditos
+                      ? "Cargando créditos..."
+                      : "Selecciona un producto"}
+                  </option>
+                  {creditos.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
                   ))}
                 </select>
-                {mostrarError("tipoCredito") && <span className="field-error">{mostrarError("tipoCredito")}</span>}
+                {errors.tipoCredito && (
+                  <span className="field-error">{errors.tipoCredito}</span>
+                )}
               </div>
-              <CampoTexto label="Monto solicitado" name="monto" type="number" value={formData.monto} onChange={handleChange} onBlur={handleBlur} error={mostrarError("monto")} />
+
+              <div className="field">
+                <label htmlFor="monto">Monto solicitado</label>
+                <input
+                  type="number"
+                  id="monto"
+                  name="monto"
+                  placeholder="Ej: 15000000"
+                  value={formData.monto}
+                  onChange={handleChange}
+                />
+                {errors.monto && (
+                  <span className="field-error">{errors.monto}</span>
+                )}
+              </div>
+
               <div className="field">
                 <label htmlFor="plazo">Plazo en meses</label>
-                <select id="plazo" name="plazo" value={formData.plazo} onChange={handleChange} onBlur={handleBlur} aria-invalid={Boolean(mostrarError("plazo"))}>
+                <select
+                  id="plazo"
+                  name="plazo"
+                  value={formData.plazo}
+                  onChange={handleChange}
+                >
                   <option value="">Selecciona un plazo</option>
                   {[12, 24, 36, 48, 60, 72, 84, 96, 120, 240].map((meses) => (
-                    <option key={meses} value={meses}>{meses} meses</option>
+                    <option key={meses} value={meses}>
+                      {meses} meses
+                    </option>
                   ))}
                 </select>
-                {mostrarError("plazo") && <span className="field-error">{mostrarError("plazo")}</span>}
+                {errors.plazo && (
+                  <span className="field-error">{errors.plazo}</span>
+                )}
               </div>
+
               <div className="field field-wide">
                 <label htmlFor="destino">Destino del crédito</label>
-                <textarea id="destino" name="destino" value={formData.destino} onChange={handleChange} onBlur={handleBlur} placeholder="Cuéntanos brevemente para qué usarás el crédito" />
+                <textarea
+                  id="destino"
+                  name="destino"
+                  placeholder="Cuéntanos brevemente para qué usarás el crédito"
+                  value={formData.destino}
+                  onChange={handleChange}
+                />
               </div>
             </div>
+
             {creditoSeleccionado && formData.monto && formData.plazo && (
-              <div className="summary-box" aria-live="polite">
+              <div className="summary-box">
                 <h4>Resumen de tu solicitud</h4>
-                <p><strong>{creditoSeleccionado.name}</strong> · {formatCOP(Number(formData.monto))} a {formData.plazo} meses</p>
-                <p className="summary-cuota">Cuota mensual estimada: <strong>{formatCOP(cuotaEstimada)}</strong></p>
-                <small>Tasa efectiva anual aplicada: {(creditoSeleccionado.rate * 100).toFixed(1)}%.</small>
+                <p>
+                  <strong>{creditoSeleccionado.name}</strong> ·{" "}
+                  {formatCOP(Number(formData.monto))} a {formData.plazo} meses
+                </p>
+                <p className="summary-cuota">
+                  Cuota mensual estimada:{" "}
+                  <strong>{formatCOP(cuotaEstimada)}</strong>
+                </p>
               </div>
             )}
           </fieldset>
@@ -187,33 +347,68 @@ function Solicitar() {
           <fieldset>
             <legend>Datos laborales</legend>
             <div className="form-grid">
-              <CampoTexto label="Empresa donde trabaja" name="empresa" value={formData.empresa} onChange={handleChange} onBlur={handleBlur} wide />
-              <CampoTexto label="Cargo" name="cargo" value={formData.cargo} onChange={handleChange} onBlur={handleBlur} />
-              <CampoTexto label="Ingresos mensuales" name="ingresos" type="number" value={formData.ingresos} onChange={handleChange} onBlur={handleBlur} error={mostrarError("ingresos")} />
+              <div className="field field-wide">
+                <label htmlFor="empresa">Empresa donde trabaja</label>
+                <input
+                  type="text"
+                  id="empresa"
+                  name="empresa"
+                  placeholder="Nombre de la empresa"
+                  value={formData.empresa}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="cargo">Cargo</label>
+                <input
+                  type="text"
+                  id="cargo"
+                  name="cargo"
+                  placeholder="Ej: Analista"
+                  value={formData.cargo}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="ingresos">Ingresos mensuales</label>
+                <input
+                  type="number"
+                  id="ingresos"
+                  name="ingresos"
+                  placeholder="Ej: 3500000"
+                  value={formData.ingresos}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
           </fieldset>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary btn-block">Enviar solicitud</button>
-            <button type="button" className="btn btn-outline btn-block" onClick={limpiarFormulario}>Limpiar formulario</button>
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={enviando}
+            >
+              {enviando ? "Enviando..." : "Enviar solicitud"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline btn-block"
+              onClick={() => {
+                setFormData(valoresIniciales);
+                setErrors({});
+                setEnviado(false);
+                setErrorEnvio(null);
+              }}
+            >
+              Limpiar formulario
+            </button>
           </div>
         </form>
-
-        {solicitudesEnviadas.length > 0 && (
-          <p className="results-count" aria-live="polite">Solicitudes enviadas en esta sesión: {solicitudesEnviadas.length}</p>
-        )}
       </div>
     </section>
-  );
-}
-
-function CampoTexto({ label, name, value, onChange, onBlur, error, type = "text", inputMode, wide = false }) {
-  return (
-    <div className={`field${wide ? " field-wide" : ""}`}>
-      <label htmlFor={name}>{label}</label>
-      <input id={name} name={name} type={type} inputMode={inputMode} value={value} onChange={onChange} onBlur={onBlur} aria-invalid={Boolean(error)} />
-      {error && <span className="field-error">{error}</span>}
-    </div>
   );
 }
 
